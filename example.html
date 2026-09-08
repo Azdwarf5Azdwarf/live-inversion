@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>walk in town — invert</title>
+  <style>
+    :root {
+      --cobble: #5c6168;
+      --mortar: #d7d0c4;
+      --shutter: #2e3a36;
+      --cat: #c47a2e;
+      --ink: #1c1914;
+      --paper: #efe8dc;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      font-family: "DIN Alternate", "Bahnschrift", "Arial Narrow", "Helvetica Neue", sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+    }
+
+    body.is-inverted {
+      background: #12151a;
+      color: #e8efe6;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.25rem 0.75rem;
+    }
+
+    .caption {
+      font-size: 0.95rem;
+      letter-spacing: 0.04em;
+      max-width: 42rem;
+    }
+
+    .switch {
+      display: inline-grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1.5px solid currentColor;
+      min-width: 12.5rem;
+      flex-shrink: 0;
+    }
+
+    .switch button {
+      appearance: none;
+      font: inherit;
+      letter-spacing: 0.08em;
+      text-transform: lowercase;
+      background: transparent;
+      color: inherit;
+      border: 0;
+      padding: 0.55rem 0.9rem;
+      cursor: pointer;
+    }
+
+    .switch button + button {
+      border-left: 1.5px solid currentColor;
+    }
+
+    .switch button[aria-pressed="true"] {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    body.is-inverted .switch button[aria-pressed="true"] {
+      background: #e8efe6;
+      color: #12151a;
+    }
+
+    .switch button:focus-visible {
+      outline: 2px solid var(--cat);
+      outline-offset: -2px;
+    }
+
+    .viewfinder {
+      margin: 0 1.25rem 1.25rem;
+      border: 8px solid var(--shutter);
+      background: #000;
+      line-height: 0;
+    }
+
+    body.is-inverted .viewfinder {
+      border-color: #c9d4cc;
+    }
+
+    .viewfinder img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .viewfinder.is-inverted img {
+      filter: invert(1);
+    }
+
+    footer {
+      padding: 0 1.25rem 1.25rem;
+      font-size: 0.9rem;
+      letter-spacing: 0.03em;
+    }
+
+    footer a {
+      color: inherit;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="caption">walk in town — what the glasses would do. one still, live invert.</p>
+    <div class="switch" role="group" aria-label="Colour inversion">
+      <button type="button" id="btn-inverted" aria-pressed="false">inverted</button>
+      <button type="button" id="btn-normal" aria-pressed="true">normal</button>
+    </div>
+  </header>
+
+  <figure class="viewfinder" id="viewfinder">
+    <img src="examples/walk-in-town.png" alt="Cobblestone street with potted plants and an orange cat walking toward the camera.">
+  </figure>
+
+  <footer>
+    Source pixels are un-inverted. If your OS display is already inverted, Normal is what you photographed; Inverted double-inverts. <a href="README.md">back to the note</a>
+  </footer>
+
+  <script>
+    const viewfinder = document.getElementById("viewfinder");
+    const invertedBtn = document.getElementById("btn-inverted");
+    const normalBtn = document.getElementById("btn-normal");
+
+    function setInverted(on) {
+      document.body.classList.toggle("is-inverted", on);
+      viewfinder.classList.toggle("is-inverted", on);
+      invertedBtn.setAttribute("aria-pressed", String(on));
+      normalBtn.setAttribute("aria-pressed", String(!on));
+    }
+
+    invertedBtn.addEventListener("click", () => setInverted(true));
+    normalBtn.addEventListener("click", () => setInverted(false));
+  </script>
+</body>
+</html>
