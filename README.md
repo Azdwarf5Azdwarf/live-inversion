@@ -17,3 +17,7 @@ The PNG below was captured on a Mac whose display was already inverted. The *fil
 ### Inverted (what the glasses do)
 
 ![Walk in town — inverted](examples/walk-in-town-inverted.png)
+
+## Live path
+
+Possible spec for the glasses + inverted-domain AI (DeepSeek *Thinking with Visual Primitives* as the training trajectory): [`docs/live-only.md`](docs/live-only.md).
