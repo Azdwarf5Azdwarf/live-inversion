@@ -20,4 +20,4 @@ The PNG below was captured on a Mac whose display was already inverted. The *fil
 
 ## Live path
 
-Possible spec for the glasses + inverted-domain AI (DeepSeek *Thinking with Visual Primitives* as the training trajectory): [`docs/live-only.md`](docs/live-only.md).
+Possible spec for the glasses + inverted-domain AI: EVE (encoder-free ingest) + DeepSeek *Thinking with Visual Primitives* (point while you talk): [`docs/live-only.md`](docs/live-only.md).

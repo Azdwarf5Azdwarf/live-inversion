@@ -34,6 +34,56 @@ Smart glasses later (chat on the lens, bone conduction — already sketched in t
 
 Never wait for the model to invert. Invert is optics (a shader). The model consumes an already-inverted buffer. Same rule as `example.html`: CSS `filter: invert(1)` is the live product in one still.
 
+## EVE (encoder-free) — how pixels enter
+
+This is the paper that looks unrelated. It is the ingest.
+
+**EVE / EVEv2** (BAAI; people write EVEE). Encoder-free VLM: no CLIP/SigLIP/ViT sitting in front of the LLM. Patches go through a thin patch-embedding layer into a decoder. Fuyu-8B was the Adept predecessor; EVE made the recipe public.
+
+- Diao, Cui, Li, et al. (2024). *Unveiling Encoder-Free Vision-Language Models.* NeurIPS 2024 (spotlight). [arXiv:2406.11832](https://arxiv.org/abs/2406.11832)
+- Diao, Li, Cui, et al. (2025). *EVEv2: Improved Baselines for Encoder-Free Vision-Language Models.* ICCV 2025. [arXiv:2502.06788](https://arxiv.org/abs/2502.06788)
+- Code: [github.com/baaivision/EVE](https://github.com/baaivision/EVE)
+
+What they actually claim: frozen vision encoders bake **inductive bias** — resolution, aspect ratio, **semantic priors**. That last one is colour (sky is blue, cat is orange). Training a decoder to eat pixels without that encoder is slow, but then the model is not stuck in CLIP-world. EVEv2: patch embed from scratch, modality-split weights inside the decoder so vision does not wreck language, recaptions instead of distilling CLIP features at train time. Arbitrary aspect ratio. They report much cheaper *image ingest* than a deep ViT+LLM stack.
+
+### Why it belongs on inverted glasses
+
+A LLaVA-style stack does this:
+
+```
+inverted frame ──► CLIP (trained on un-inverted photos) ──► LLM
+```
+
+CLIP never saw invert. It will try to map cyan-cat-pixels onto “orange cat / sky / terracotta” embeddings and fail or hallucinate the un-inverted world. That is the translation step this spec already forbids.
+
+Encoder-free does this:
+
+```
+inverted frame ──► patch embed ──► same decoder that talks
+```
+
+No frozen colour prior in the way. Invert is just different RGB. The decoder can learn inverted-domain from patches, which is the “maybe the AI likes inverted images” hypothesis in architecture form: **like** meaning *not routed through a model that was trained to hate them*.
+
+Glasses extras that come for free:
+
+- Camera frames are not 224×224 squares. EVE already wants arbitrary ratio.
+- Ingest latency: they claim an order of magnitude faster than encoder-based VLMs *for the vision front-end*. Display invert is still the shader; this is the sidecar’s front-end.
+- The open question “invert in latent space after a normal encoder?” is answered: **don’t have that encoder.** Pixel invert is the only invert.
+
+Caveat: EVE v1 still used a pretrained encoder as *train-time* extra supervision (align patches to CLIP). That would smuggle colour priors back in unless the teacher also sees inverted images. EVEv2 dropped that for recaptions. For training-in-inversion, recaption **inverted** stills; do not distill CLIP on normal photos.
+
+Token count is the other caveat. EVE can emit thousands of patch tokens. DeepSeek-Vision compresses a ViT down to tens of KV entries. Glasses cannot afford both “no encoder” and “2.5K tokens per frame” forever. First student: EVE-shaped ingest, then compress or drop frames. Do not take DeepSeek’s ViT as the glasses camera.
+
+## Two papers, two jobs
+
+| | Job | Invert |
+|---|---|---|
+| **Shader** | what the eye gets | the product |
+| **EVE** | how pixels enter the LLM | skip CLIP’s colour prior |
+| **DeepSeek primitives** | how the LLM points while it talks | boxes/points do not move when colour flips |
+
+EVE is not a pointing model. DeepSeek is not encoder-free. Stack them: inverted patches → encoder-free student → CoT with `<|ref|><|box|>` / `<|point|>`.
+
 ## DeepSeek paper as the training trajectory
 
 Paper: **Lu, Ma, Chen, et al. (2026). *Thinking with Visual Primitives*.** DeepSeek + Peking University + Tsinghua. Official GitHub was published then pulled; clones and write-ups remain.
@@ -103,9 +153,9 @@ Do **not** start from a frontier VLM and hope invert is “just augmentation.”
 ```
 camera ──► invert shader ──► glasses (eye)
                  │
-                 └──► inverted frame ──► VLM that thinks with primitives
+                 └──► inverted frame ──► patch embed (EVE, no CLIP)
                                               │
-                                              └──► CoT with <|ref|><|box|> / <|point|>
+                                              └──► decoder CoT with <|ref|><|box|> / <|point|>
                                                    spoken / shown to wearer
 ```
 
@@ -131,7 +181,7 @@ If step 3 does not help light-sensitivity / focus, stop. The model does not resc
 
 - Not a VR social app.
 - Not a photo camera (it could dump frames; that is not the job).
-- Not “train a 284B DeepSeek replica.” The paper is the *trajectory* (primitives in CoT, split experts, invert as domain). The first student can be a small VLM.
+- Not “train a 284B DeepSeek replica” and not “run EVE-7B as the glasses.” EVE is the *ingest* (no encoder). DeepSeek primitives are the *think*. The first student can be a small encoder-free VLM taught to point.
 - Not GitHub Pages, not a name (cam.ius / poi.cam still open).
 
 ## First measurements (when live exists)
@@ -142,6 +192,7 @@ If step 3 does not help light-sensitivity / focus, stop. The model does not resc
 
 ## Open
 
-- Invert in pixel space (this spec) vs invert in latent space after a normal encoder. Pixel invert is what the eye gets; start there.
-- Whether off-the-shelf VLMs already “like” invert, or need the inverted-domain train.
+- Invert in pixel space (this spec). Latent invert after a CLIP encoder is the thing EVE exists to avoid.
+- Whether an off-the-shelf encoder VLM already “likes” invert (probably not — CLIP), vs an encoder-free student trained inverted.
+- Token budget on device: EVE-style patches vs DeepSeek-style KV compression. Need both cheap ingest *and* few tokens.
 - Whether colour-word mode (inverted appearance vs world-knowledge) should be a switch on the glasses, like invert/normal in `example.html`.
